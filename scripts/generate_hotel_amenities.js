@@ -28,53 +28,61 @@ async function generateAmenities() {
     console.log('Connected to MongoDB');
 
     const hotels = await Hotel.find({});
-    console.log(`Found ${hotels.length} hotels. Requesting AI tags...`);
+    console.log(`Found ${hotels.length} hotels. Requesting tailored AI tags one by one...`);
 
-    const prompt = `
-    You are an expert luxury travel agent. Provide exactly 30 unique, premium hotel amenities (e.g., "Rooftop Infinity Pool", "Award-winning Spa", "Michelin-star Dining", "24/7 Butler Service").
-    Do not use basic ones like WiFi or Air Conditioning.
-    
-    Return strictly raw JSON. It must be a single JSON array of strings. No markdown formatting, no backticks, no explanations.
-    `;
-
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'nvidia/nemotron-3.5-lightning:free',
-        messages: [{ role: 'user', content: prompt }],
-      })
-    });
-
-    const data = await response.json();
-    let content = data.choices[0].message.content.trim();
-    
-    // Clean up potential markdown wrapper
-    if (content.startsWith('```json')) {
-      content = content.replace(/^```json/, '').replace(/```$/, '').trim();
-    } else if (content.startsWith('```')) {
-      content = content.replace(/^```/, '').replace(/```$/, '').trim();
-    }
-    
-    const luxuryAmenities = JSON.parse(content);
-    console.log(`AI successfully generated ${luxuryAmenities.length} premium amenities!`);
-    
     let updatedCount = 0;
+    
     for (const hotel of hotels) {
-      // Shuffle array and pick 3-4
-      const shuffled = [...luxuryAmenities].sort(() => 0.5 - Math.random());
-      const newAmenities = shuffled.slice(0, Math.floor(Math.random() * 2) + 3); // 3 or 4
+      console.log(`Asking Nemotron for tailored amenities for: ${hotel.name}...`);
       
-      hotel.amenities = newAmenities;
-      await hotel.save();
-      console.log(`Updated ${hotel.name}: ${newAmenities.join(', ')}`);
-      updatedCount++;
+      const prompt = `
+      You are an expert luxury travel agent. Based on the real-world characteristics of the hotel "${hotel.name}" located in ${hotel.location}, provide exactly 3 specific, realistic premium amenities that this specific hotel is known for or would likely have.
+      Do not use basic ones like WiFi or Air Conditioning. 
+      EACH AMENITY MUST BE SHORT AND PUNCHY (MAX 2-4 WORDS). Example: "Historic Tea Service", "Lake View Balcony", "Rooftop Pool".
+      
+      Return strictly raw JSON. It must be a single JSON array of strings. No markdown formatting, no backticks, no explanations.
+      `;
+
+      try {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'nvidia/nemotron-3.5-lightning:free',
+            messages: [{ role: 'user', content: prompt }],
+          })
+        });
+
+        const data = await response.json();
+        let content = data.choices[0].message.content.trim();
+        
+        // Clean up potential markdown wrapper
+        if (content.startsWith('```json')) {
+          content = content.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (content.startsWith('```')) {
+          content = content.replace(/^```/, '').replace(/```$/, '').trim();
+        }
+        
+        const tailoredAmenities = JSON.parse(content);
+        
+        if (Array.isArray(tailoredAmenities) && tailoredAmenities.length > 0) {
+          hotel.amenities = tailoredAmenities;
+          await hotel.save();
+          console.log(`✅ Updated ${hotel.name}: ${tailoredAmenities.join(', ')}`);
+          updatedCount++;
+        }
+        
+        // Sleep for 1 second to avoid rate limiting on the free tier
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } catch (err) {
+        console.error(`❌ Failed to parse or fetch for ${hotel.name}:`, err.message);
+      }
     }
 
-    console.log(`Successfully updated ${updatedCount} hotels with AI generated amenities!`);
+    console.log(`Successfully updated ${updatedCount} hotels with TAILORED AI generated amenities!`);
     
   } catch (error) {
     console.error('Error:', error);
