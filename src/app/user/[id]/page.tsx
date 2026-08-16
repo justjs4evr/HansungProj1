@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/db/mongodb';
 import { User, Review } from '@/lib/db/models';
 import Link from 'next/link';
+import TrustButton from './TrustButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,16 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
   if (!user) {
     return <div>User not found</div>;
   }
+
+  // Count how many users trust this profile (Trusted By)
+  const trustedByCount = await User.countDocuments({ trustedUsers: user._id });
+
+  // Get current logged in user (Alice for demo context)
+  const alice = await User.findOne({ username: 'alice' }).lean();
+  const isInitiallyTrusted = alice?.trustedUsers?.some(
+    (id: any) => id.toString() === user._id.toString()
+  ) || false;
+  const isSelf = alice ? alice.username === user.username : false;
 
   // Fetch their reviews
   const reviews = await Review.find({ userId: user._id })
@@ -40,23 +51,24 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
             )}
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem' }}>@{user.username}</p>
-          <div style={{ marginTop: '1.25rem', display: 'flex', gap: '1.5rem' }}>
+          <div style={{ marginTop: '1.25rem', display: 'flex', gap: '2rem' }}>
             <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>{reviews.length}</span> Reviews
             </span>
             <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>{user.trustedUsers?.length || 0}</span> Trusted Reviewers
+              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>{trustedByCount}</span> Trusted By
+            </span>
+            <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--accent)' }}>{user.trustedUsers?.length || 0}</span> Following
             </span>
           </div>
         </div>
         <div>
-          {/* Trust Action Button - mocked for UI */}
-          <button className="btn btn-primary" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 2rem' }}>
-            <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-            Trust Reviewer
-          </button>
+          <TrustButton
+            targetUserId={user._id.toString()}
+            isInitiallyTrusted={isInitiallyTrusted}
+            isSelf={isSelf}
+          />
         </div>
       </div>
 
