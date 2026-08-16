@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/db/mongodb';
 import { User, Hotel, Review } from '@/lib/db/models';
 import { calculateTrustScore } from '@/lib/ai/openrouter';
@@ -62,6 +63,9 @@ export async function POST(req) {
       aiAnalysis,
       moderationStatus: 'approved'
     });
+
+    // Revalidate the hotel detail page so the new review instantly appears
+    revalidatePath(`/hotel/${hotel._id}`);
 
     return NextResponse.json({ success: true, review: newReview });
   } catch (error) {
