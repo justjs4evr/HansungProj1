@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRUE REVIEW - Human Reviews, No Bots</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; overflow-x: hidden; }
+        .sidebar-transition { transition: all 0.3s ease; }
+        .hidden-sidebar { transform: translateX(-100%); width: 0; overflow: hidden; }
+        .reliability-tag { transition: all 0.5s ease; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+    <!-- 상단 헤더 -->
+    <header class="bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center z-50">
+        <div class="flex items-center gap-4">
+            <button id="toggleSidebar" class="p-2 hover:bg-gray-100 rounded-lg text-blue-900">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <h1 class="text-2xl font-bold text-blue-900 tracking-tight cursor-pointer" onclick="location.reload()">TRUE REVIEW</h1>
+            <span class="text-xs text-gray-500 font-medium ml-2">Human Reviews, No Bots</span>
+        </div>
+        <div class="flex items-center gap-6 text-gray-500">
+            <i class="fas fa-search cursor-pointer hover:text-blue-900"></i>
+            <i class="fas fa-bell cursor-pointer hover:text-blue-900"></i>
+            <div class="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-300">
+                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100" alt="profile">
+            </div>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <!-- 사이드바 -->
+        <aside id="sidebar" class="sidebar-transition w-72 bg-[#1e3a8a] text-white flex flex-col p-6 z-40 overflow-y-auto">
+            <div class="mb-8">
+                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">쇼핑몰</h3>
+                <div onclick="openSearch('쿠팡')" class="flex items-center gap-3 p-3 hover:bg-blue-800 rounded-xl cursor-pointer mb-2">
+                    <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-[10px] font-bold">Coupang</div>
+                    <div><p class="text-sm font-semibold">Coupang</p></div>
+                </div>
+                <div onclick="openSearch('네이버 쇼핑')" class="flex items-center gap-3 p-3 hover:bg-blue-800 rounded-xl cursor-pointer">
+                    <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center font-bold italic">N</div>
+                    <div><p class="text-sm font-semibold">Naver Shopping</p></div>
+                </div>
+            </div>
+            <div class="mb-8">
+                <h3 class="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4">배달 앱</h3>
+                <div onclick="openSearch('배민')" class="flex items-center gap-3 p-3 hover:bg-blue-800 rounded-xl cursor-pointer">
+                    <div class="w-8 h-8 bg-cyan-400 rounded-lg flex items-center justify-center font-bold text-xs">배민</div>
+                    <div><p class="text-sm font-semibold">Baemin</p></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 메인 콘텐츠 (기본 화면) -->
+        <main id="mainContent" class="flex-1 overflow-y-auto p-10 flex gap-10">
+            <!-- 프로필 및 추천 리뷰 (기존과 동일) -->
+            <div class="w-1/3 text-center">
+                <div class="bg-white rounded-[40px] shadow-sm border border-gray-100 p-10">
+                    <img src="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400" class="w-48 h-48 rounded-full mx-auto mb-6 object-cover border-4 border-gray-50 shadow-inner">
+                    <h2 class="text-2xl font-bold mb-2">이지민 (High Schooler)</h2>
+                    <button class="mt-6 px-10 py-3 border border-blue-900 text-blue-900 rounded-full font-semibold hover:bg-blue-50 transition-colors">프로필 수정</button>
+                </div>
+            </div>
+            <div class="w-2/3">
+                <h3 class="text-xl font-bold mb-6 text-gray-800">당신이 신뢰하는 인간의 리뷰</h3>
+                <div class="space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 flex justify-between items-center shadow-sm">
+                        <div>
+                            <h4 class="font-bold text-lg">맥북 프로 M3 후기입니다</h4>
+                            <p class="text-sm text-gray-500">맥북 프로 M3 · 진짜 사람 인증 완료</p>
+                        </div>
+                        <div class="text-orange-400"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 검색창 오버레이 -->
+        <div id="searchOverlay" class="fixed inset-0 bg-white z-[60] flex flex-col items-center p-20 hidden">
+            <div class="w-full max-w-3xl text-center">
+                <h2 id="searchTitle" class="text-3xl font-bold text-blue-900 mb-10">플랫폼 검색</h2>
+                <div class="relative">
+                    <input type="text" id="searchInput" onkeypress="if(event.keyCode==13) showResults()" placeholder="검색어를 입력하세요..." class="w-full border-b-2 border-blue-900 p-4 text-2xl outline-none">
+                    <button onclick="showResults()" class="absolute right-4 top-6 text-2xl text-blue-900"><i class="fas fa-arrow-right"></i></button>
+                </div>
+                <button onclick="closeSearch()" class="mt-10 text-gray-400 hover:text-black">닫기 (ESC)</button>
+            </div>
+        </div>
+
+        <!-- 검색 결과 화면 -->
+        <div id="resultsPage" class="fixed inset-0 bg-[#f8fafc] z-[70] hidden overflow-y-auto p-10 pt-24">
+            <div class="max-w-4xl mx-auto">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <button onclick="backToSearch()" class="text-blue-600 mb-2 flex items-center gap-2 hover:underline">
+                            <i class="fas fa-chevron-left"></i> 다시 검색하기
+                        </button>
+                        <h2 id="resultsHeading" class="text-3xl font-bold text-gray-900">검색 결과</h2>
+                    </div>
+                    <!-- ★ 핵심 기능: AI 신뢰도 확인 버튼 -->
+                    <button onclick="analyzeReliability()" class="bg-blue-900 text-white px-6 py-3 rounded-full font-bold shadow-lg hover:bg-blue-800 flex items-center gap-2 transition-all active:scale-95">
+                        <i class="fas fa-robot"></i> AI 신뢰도 확인 및 정렬
+                    </button>
+                </div>
+
+                <div id="reviewsContainer" class="space-y-4">
+                    <!-- 검색 결과 리뷰들이 여기에 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 가상 리뷰 데이터 (검색 시 시뮬레이션용)
+        const mockReviews = [
+            { id: 1, title: "배송이 정말 빨라요!", product: "아이폰 15", content: "어제 주문했는데 오늘 아침에 도착했네요. 성능도 좋고 마음에 듭니다.", reliability: 98, stars: 5 },
+            { id: 2, title: "가성비는 최고인 듯합니다", product: "가성비 키보드", content: "가격 대비 소음도 적고 타건감도 훌륭합니다. 추천해요.", reliability: 45, stars: 4 },
+            { id: 3, title: "매우 만족스러운 경험이었습니다", product: "호텔 침구", content: "인생에서 가장 완벽한 수면을 경험했습니다. 적극 추천하는 바입니다.", reliability: 12, stars: 5 },
+            { id: 4, title: "실제 써보니 단점이 보이네요", product: "무선 이어폰", content: "배터리가 생각보다 빨리 닳아요. 하지만 음질은 수준급입니다.", reliability: 88, stars: 3 },
+            { id: 5, title: "최고의 선택이었습니다!", product: "아이폰 15", content: "이 제품을 사고 제 삶이 바뀌었습니다. 정말 환상적이네요.", reliability: 65, stars: 5 }
+        ];
+
+        // 사이드바 & 검색창 제어
+        function openSearch(platform) {
+            document.getElementById('searchOverlay').classList.remove('hidden');
+            document.getElementById('searchTitle').innerText = `${platform} 내 검색`;
+            document.getElementById('searchInput').focus();
+        }
+        function closeSearch() { document.getElementById('searchOverlay').classList.add('hidden'); }
+        function backToSearch() { document.getElementById('resultsPage').classList.add('hidden'); }
+
+        // 검색 결과 표시
+        function showResults() {
+            const keyword = document.getElementById('searchInput').value;
+            if(!keyword) return alert("검색어를 입력해주세요!");
+            
+            document.getElementById('searchOverlay').classList.add('hidden');
+            document.getElementById('resultsPage').classList.remove('hidden');
+            document.getElementById('resultsHeading').innerText = `'${keyword}' 에 대한 인간 리뷰`;
+            
+            renderReviews(mockReviews, false); // 초기에는 정렬 없이 표시
+        }
+
+        // 리뷰 렌더링 함수
+        function renderReviews(reviews, showReliability) {
+            const container = document.getElementById('reviewsContainer');
+            container.innerHTML = '';
+
+            reviews.forEach(review => {
+                // 신뢰도 점수에 따른 색상 결정
+                let colorClass = 'text-gray-400';
+                if(showReliability) {
+                    if(review.reliability >= 80) colorClass = 'text-green-500 border-green-200 bg-green-50';
+                    else if(review.reliability >= 50) colorClass = 'text-orange-500 border-orange-200 bg-orange-50';
+                    else colorClass = 'text-red-500 border-red-200 bg-red-50';
+                }
+
+                const card = `
+                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-2">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <h4 class="font-bold text-xl text-gray-800">${review.title}</h4>
+                                ${showReliability ? `<span class="reliability-tag text-xs font-black px-2 py-1 rounded border ${colorClass}">신뢰도 ${review.reliability}%</span>` : ''}
+                            </div>
+                            <div class="text-orange-400 text-xs">
+                                ${'<i class="fas fa-star"></i>'.repeat(review.stars)}
+                            </div>
+                        </div>
+                        <p class="text-gray-500 text-sm">${review.product}</p>
+                        <p class="text-gray-600 mt-2">${review.content}</p>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+
+        // ★ 핵심 로직: 신뢰도 분석 및 정렬
+        function analyzeReliability() {
+            // 1. 신뢰도 높은 순으로 데이터 정렬
+            const sorted = [...mockReviews].sort((a, b) => b.reliability - a.reliability);
+            
+            // 2. 정렬된 데이터로 다시 렌더링 (신뢰도 표시 활성화)
+            renderReviews(sorted, true);
+            
+            // 3. 사용자 알림 (선택 사항)
+            const btn = event.currentTarget;
+            btn.innerHTML = '<i class="fas fa-check"></i> 분석 및 정렬 완료';
+            btn.classList.replace('bg-blue-900', 'bg-green-600');
+        }
+
+        // 사이드바 토글
+        document.getElementById('toggleSidebar').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.toggle('hidden-sidebar');
+        });
+    </script>
+</body>
+</html>
