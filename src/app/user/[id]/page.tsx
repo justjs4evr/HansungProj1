@@ -2,6 +2,7 @@ import dbConnect from '@/lib/db/mongodb';
 import { User, Review } from '@/lib/db/models';
 import Link from 'next/link';
 import TrustButton from './TrustButton';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,12 +20,17 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
   // Count how many users trust this profile (Trusted By)
   const trustedByCount = await User.countDocuments({ trustedUsers: user._id });
 
-  // Get current logged in user (Alice for demo context)
-  const alice = await User.findOne({ username: 'alice' }).lean();
-  const isInitiallyTrusted = alice?.trustedUsers?.some(
+  // Get current logged in user from session
+  const session = await auth();
+  let currentUser = null;
+  if (session?.user?.email) {
+    currentUser = await User.findOne({ email: session.user.email }).lean();
+  }
+
+  const isInitiallyTrusted = currentUser?.trustedUsers?.some(
     (id: any) => id.toString() === user._id.toString()
   ) || false;
-  const isSelf = alice ? alice.username === user.username : false;
+  const isSelf = currentUser ? currentUser.username === user.username : false;
 
   // Fetch their reviews
   const reviews = await Review.find({ userId: user._id })
@@ -39,7 +45,7 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
           {user.displayName.charAt(0).toUpperCase()}
         </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', letterSpacing: '-0.02em' }}>
+          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', letterSpacing: '-0.02em' }}>
             {user.displayName}
             {user.verificationStatus && (
                <span className="badge badge-success" style={{ fontSize: '0.875rem', padding: '0.375rem 0.875rem' }}>
@@ -50,7 +56,8 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
                </span>
             )}
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem' }}>@{user.username}</p>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.125rem', marginBottom: '0.75rem' }}>@{user.username}</p>
+          {user.bio && <p style={{ color: 'var(--text-primary)', fontSize: '1rem', fontStyle: 'italic', maxWidth: '600px' }}>"{user.bio}"</p>}
           <div style={{ marginTop: '1.25rem', display: 'flex', gap: '2rem' }}>
             <span style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>{reviews.length}</span> Reviews
@@ -64,11 +71,20 @@ export default async function UserProfile({ params }: { params: Promise<{ id: st
           </div>
         </div>
         <div>
-          <TrustButton
-            targetUserId={user._id.toString()}
-            isInitiallyTrusted={isInitiallyTrusted}
-            isSelf={isSelf}
-          />
+          {isSelf ? (
+            <Link href={`/user/${user.username}/edit`} className="btn btn-outline" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', padding: '0.75rem 1.5rem' }}>
+              <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Edit Profile
+            </Link>
+          ) : (
+            <TrustButton
+              targetUserId={user._id.toString()}
+              isInitiallyTrusted={isInitiallyTrusted}
+              isSelf={false}
+            />
+          )}
         </div>
       </div>
 

@@ -3,19 +3,25 @@ import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/db/mongodb';
 import { User, Hotel, Review } from '@/lib/db/models';
 import { calculateTrustScore } from '@/lib/ai/openrouter';
+import { auth } from '@/auth';
 
 export async function POST(req) {
   try {
+    const session = await auth();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: 'You must be logged in to write a review.' }, { status: 401 });
+    }
+
     await dbConnect();
     const body = await req.json();
-    const { hotelId, text, rating, username = 'alice' } = body;
+    const { hotelId, text, rating } = body;
 
     if (!hotelId || !text || !rating) {
       return NextResponse.json({ error: 'Hotel ID, text, and rating are required.' }, { status: 400 });
     }
 
     // Find user and hotel
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email: session.user.email });
     const hotel = await Hotel.findById(hotelId);
 
     if (!user || !hotel) {

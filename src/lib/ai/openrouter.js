@@ -32,6 +32,7 @@ Output ONLY JSON, no markdown formatting blocks, no explanations.
   "spam_likelihood": number,
   "template_likelihood": number,
   "hotel_fact_consistency": number,
+  "is_about_hotel_experience": boolean,
   "reasoning_summary": "string"
 }`;
 
@@ -64,13 +65,20 @@ Output ONLY JSON, no markdown formatting blocks, no explanations.
       const parsed = JSON.parse(resultContent);
       
       // Calculate overall score (simplified heuristic)
-      const score = Math.round(
+      let score = Math.round(
         ((parsed.specificity * 0.20) + 
         (parsed.consistency * 0.25) + 
         ((1 - parsed.spam_likelihood) * 0.25) + 
         ((1 - parsed.template_likelihood) * 0.15) + 
         (parsed.hotel_fact_consistency * 0.15)) * 100
       );
+
+      // Strict Validation Check
+      if (parsed.is_about_hotel_experience === false) {
+        score = 0;
+        parsed.reasoning_summary = "FLAGGED: Irrelevant content detected. Review does not appear to describe a hotel experience.";
+        parsed.spam_likelihood = 1.0;
+      }
 
       parsed.overallScore = Math.min(100, Math.max(0, score));
       return parsed;

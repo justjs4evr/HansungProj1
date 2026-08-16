@@ -2,18 +2,24 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import dbConnect from '@/lib/db/mongodb';
 import { User } from '@/lib/db/models';
+import { auth } from '@/auth';
 
 export async function POST(req) {
   try {
+    const session = await auth();
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     await dbConnect();
     const body = await req.json();
-    const { targetUserId, currentUsername = 'alice' } = body;
+    const { targetUserId } = body;
 
     if (!targetUserId) {
       return NextResponse.json({ error: 'Target user ID is required.' }, { status: 400 });
     }
 
-    const currentUser = await User.findOne({ username: currentUsername });
+    const currentUser = await User.findOne({ email: session.user.email });
     const targetUser = await User.findById(targetUserId);
 
     if (!currentUser || !targetUser) {

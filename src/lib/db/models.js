@@ -2,8 +2,12 @@ import mongoose from 'mongoose';
 
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  password: { type: String, required: false }, // Optional for Google OAuth users
+  email: { type: String, unique: true, sparse: true },
+  googleId: { type: String, unique: true, sparse: true },
   displayName: { type: String },
+  bio: { type: String, default: "I am a new reviewer on TrustHotel!" },
+  avatarUrl: { type: String },
   verificationStatus: { type: Boolean, default: false },
   reviewLimit: { type: Number, default: 3 }, // 3 per day standard, 10 if verified
   trustedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

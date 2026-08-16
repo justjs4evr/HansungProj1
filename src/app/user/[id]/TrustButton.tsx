@@ -30,7 +30,7 @@ export default function TrustButton({
       const res = await fetch('/api/user/trust', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetUserId, currentUsername: 'alice' })
+        body: JSON.stringify({ targetUserId })
       });
 
       const data = await res.json();
