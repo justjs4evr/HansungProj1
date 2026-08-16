@@ -80,7 +80,7 @@ export default async function HotelDetail({ params, searchParams }: { params: Pr
             </svg>
             {hotel.location}
           </span>
-          <span className="badge badge-info">{hotel.priceCategory}</span>
+          <span className="badge badge-info" style={{ fontWeight: 600 }}>${hotel.pricePerNight || 250}/night</span>
         </div>
         
         <div style={{ marginTop: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>

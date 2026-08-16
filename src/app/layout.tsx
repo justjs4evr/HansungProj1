@@ -28,6 +28,7 @@ export default async function RootLayout({
             </Link>
             <nav style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
               <Link href="/" style={{ fontWeight: 500, fontSize: '0.95rem' }}>Hotels</Link>
+              <Link href="/reviewers" style={{ fontWeight: 500, fontSize: '0.95rem' }}>Network</Link>
               <Link href="/ai-principles" style={{ fontWeight: 500, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.95rem' }}>
                 <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />

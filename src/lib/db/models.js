@@ -19,7 +19,8 @@ const HotelSchema = new mongoose.Schema({
   location: { type: String, required: true },
   description: { type: String },
   amenities: [String],
-  priceCategory: { type: String }, // e.g. "$", "$$", "$$$"
+  priceCategory: { type: String }, // Legacy e.g. "$", "$$", "$$$"
+  pricePerNight: { type: Number, default: 250 }, // Real numerical price
   rating: { type: Number, default: 0 },
   imageUrl: { type: String },
 });

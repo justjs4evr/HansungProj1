@@ -37,7 +37,7 @@ export default async function Home() {
               <div style={{ padding: '1.5rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                   <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 600 }}>{hotel.name}</h3>
-                  <span className="badge badge-info">{hotel.priceCategory}</span>
+                  <span className="badge badge-info" style={{ fontWeight: 600 }}>${hotel.pricePerNight || 250}/night</span>
                 </div>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                   <svg className="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
