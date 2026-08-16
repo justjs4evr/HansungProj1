@@ -13,34 +13,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
-        await dbConnect();
-        const existingUser = await User.findOne({ email: user.email });
+        try {
+          await dbConnect();
+          const existingUser = await User.findOne({ email: user.email });
 
-        if (!existingUser) {
-          // Generate a clean username from email
-          const baseUsername = user.email?.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user";
-          let username = baseUsername;
-          let counter = 1;
-          
-          // Ensure username is unique
-          while (await User.findOne({ username })) {
-            username = `${baseUsername}${counter}`;
-            counter++;
+          if (!existingUser) {
+            // Generate a clean username from email
+            const baseUsername = user.email?.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user";
+            let username = baseUsername;
+            let counter = 1;
+            
+            // Ensure username is unique
+            while (await User.findOne({ username })) {
+              username = `${baseUsername}${counter}`;
+              counter++;
+            }
+
+            // Create new user via Google
+            await User.create({
+              username,
+              email: user.email,
+              googleId: account.providerAccountId,
+              displayName: user.name,
+              avatarUrl: user.image,
+              verificationStatus: true,
+              reviewLimit: 10,
+              bio: "I just joined TrustHotel via Google!"
+            });
           }
-
-          // Create new user via Google
-          await User.create({
-            username,
-            email: user.email,
-            googleId: account.providerAccountId,
-            displayName: user.name,
-            avatarUrl: user.image,
-            verificationStatus: true, // Google accounts are implicitly verified
-            reviewLimit: 10, // Increased limit for verified users
-            bio: "I just joined TrustHotel via Google!"
-          });
+          return true;
+        } catch (error) {
+          console.error("SignIn Database Error:", error);
+          return false;
         }
-        return true;
       }
       return true;
     },
