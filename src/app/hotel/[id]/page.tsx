@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/db/mongodb';
 import { Hotel, Review, User } from '@/lib/db/models';
 import Link from 'next/link';
+import ReviewFilter from './ReviewFilter';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,18 +23,42 @@ function TrustBadge({ score }: { score: number }) {
   );
 }
 
-export default async function HotelDetail({ params }: { params: Promise<{ id: string }> }) {
+export default async function HotelDetail({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ filter?: string }> }) {
   await dbConnect();
   
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
+  const filter = resolvedSearchParams.filter || 'all';
+
   const hotel = await Hotel.findById(resolvedParams.id).lean();
   
   if (!hotel) {
     return <div>Hotel not found</div>;
   }
 
-  // Fetch reviews and populate user details
-  const reviews = await Review.find({ hotelId: resolvedParams.id })
+  // Determine query based on filter
+  let query: any = { hotelId: resolvedParams.id };
+
+  if (filter === 'verified') {
+    query.verifiedBooking = true;
+  } else if (filter === 'high_trust') {
+    query.aiTrustScore = { $gte: 80 };
+  } else if (filter === 'trusted') {
+    // For demo: filter by Alice's trusted network
+    const alice = await User.findOne({ username: 'alice' }).lean();
+    if (alice && alice.trustedUsers && alice.trustedUsers.length > 0) {
+      query.userId = { $in: alice.trustedUsers };
+    } else {
+      // If no trusted users, return no reviews for this filter
+      query.userId = null; 
+    }
+  }
+
+  // Get total review count unconditionally for the filter UI
+  const totalReviews = await Review.countDocuments({ hotelId: resolvedParams.id });
+
+  // Fetch filtered reviews and populate user details
+  const reviews = await Review.find(query)
     .populate({ path: 'userId', select: 'username displayName verificationStatus trustedUsers' })
     .sort({ createdAt: -1 })
     .lean();
@@ -67,14 +92,9 @@ export default async function HotelDetail({ params }: { params: Promise<{ id: st
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '2rem' }}>
         <aside>
-          <div className="card" style={{ padding: '1.5rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Review Filters</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-               <label><input type="radio" name="filter" defaultChecked /> All Reviews ({reviews.length})</label>
-               <label><input type="radio" name="filter" /> Verified Users Only</label>
-               <label><input type="radio" name="filter" /> Trusted Network</label>
-               <label><input type="radio" name="filter" /> High AI Trust</label>
-            </div>
+          <div className="card" style={{ padding: '1.5rem', position: 'sticky', top: '100px' }}>
+            <h3 style={{ marginBottom: '1.25rem', fontSize: '1.25rem' }}>Review Filters</h3>
+            <ReviewFilter totalReviews={totalReviews} />
             
             <hr style={{ margin: '1rem 0', borderColor: 'var(--border-color)', borderTop: 'none' }}/>
             
